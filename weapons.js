@@ -411,17 +411,37 @@ class Fork extends WeaponBase {
     }
   }
 
-  // 检测钢叉命中：检查钢叉尖端是否碰到任何玩家
+  // 检测钢叉命中：线段（叉手→叉尖）是否穿过玩家圆形
   _checkHit(players, resolver) {
+    var ox = this.owner.x;
+    var oy = this.owner.y;
+    var ax = this.tipX - ox;
+    var ay = this.tipY - oy;
+    var lenSq = ax * ax + ay * ay;
+    var hitRadius = CONFIG.player.radius + 8;
+
     for (var i = 0; i < players.length; i++) {
       var p = players[i];
       if (p === this.owner || !p.alive) continue;
 
-      var dx = this.tipX - p.x;
-      var dy = this.tipY - p.y;
+      // 求线段上离目标圆心最近的点
+      var closestX, closestY;
+      if (lenSq < 0.0001) {
+        closestX = ox;
+        closestY = oy;
+      } else {
+        var t = ((p.x - ox) * ax + (p.y - oy) * ay) / lenSq;
+        if (t < 0) t = 0;
+        if (t > 1) t = 1;
+        closestX = ox + ax * t;
+        closestY = oy + ay * t;
+      }
+
+      var dx = closestX - p.x;
+      var dy = closestY - p.y;
       var dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist < CONFIG.player.radius + 8) {
+      if (dist < hitRadius) {
         // 命中！将事件推入仲裁队列，不直接生效
         if (resolver) {
           resolver.addHit(this.owner, p, 'fork', this.isHeavy ? 'heavy' : 'light');

@@ -529,13 +529,23 @@ const Level = {
       ctx.fillRect(ox + c * gs, oy + r * gs, gs, gs);
     });
 
-    //  5.  深渊
-    ctx.fillStyle = '#0a0a15';
+    //  5.  深渊（纯黑填充 + 暗红边框，让玩家能清楚感受到危险）
     this.deadCells.forEach(function (key) {
       var parts = key.split(',');
       var c = parseInt(parts[0]);
       var r = parseInt(parts[1]);
-      ctx.fillRect(ox + c * gs, oy + r * gs, gs, gs);
+      var x = ox + c * gs;
+      var y = oy + r * gs;
+      // 纯黑填充
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x, y, gs, gs);
+      // 暗血红色边框光晕
+      ctx.strokeStyle = 'rgba(233, 69, 96, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, gs - 2, gs - 2);
+      // 内圈暗红微光
+      ctx.fillStyle = 'rgba(40, 0, 0, 0.3)';
+      ctx.fillRect(x + 2, y + 2, gs - 4, gs - 4);
     });
   },
 
