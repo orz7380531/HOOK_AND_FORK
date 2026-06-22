@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>钩锁 vs 钢叉</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    border: 2px solid #222244;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="1280" height="720"></canvas>
+<script src="config.js"></script>
+<script src="input.js"></script>
+<script src="physics.js"></script>
+<script src="level.js"></script>
+<script src="weapons.js"></script>
+<script src="resolver.js"></script>
+<script src="player.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
