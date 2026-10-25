@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOOK AND FORK · 项目分析</title>
+<style>
+  :root{
+    --bg:#0a0a1a; --panel:#14142a; --panel2:#1a1a2e;
+    --red:#e94560; --blue:#4488ff; --blue2:#0f3460;
+    --ink:#ececf5; --muted:#9aa0c0; --line:#2a2a4a; --gold:#ffce6a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(68,136,255,.12), transparent 60%),
+      radial-gradient(1000px 500px at 10% 10%, rgba(233,69,96,.12), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.65; padding:0 0 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px;}
+
+  /* Hero */
+  .hero{padding:64px 22px 40px;text-align:center;border-bottom:1px solid var(--line);}
+  .hero h1{font-size:54px;font-weight:800;letter-spacing:2px;
+    background:linear-gradient(90deg,var(--red),#fff 50%,var(--blue));
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero .vs{display:inline-block;margin:0 14px;color:var(--muted);font-size:30px;font-weight:700;}
+  .hero p.tag{color:var(--muted);margin-top:14px;font-size:16px;max-width:760px;margin-left:auto;margin-right:auto;}
+  .badges{display:flex;gap:14px;justify-content:center;margin-top:26px;flex-wrap:wrap;}
+  .badge{padding:10px 18px;border-radius:999px;font-weight:700;font-size:14px;border:1px solid var(--line);background:var(--panel);}
+  .badge.red{color:var(--red);border-color:rgba(233,69,96,.5);box-shadow:0 0 22px rgba(233,69,96,.18) inset;}
+  .badge.blue{color:var(--blue);border-color:rgba(68,136,255,.5);box-shadow:0 0 22px rgba(68,136,255,.18) inset;}
+
+  section{padding:40px 0;border-bottom:1px solid var(--line);}
+  h2{font-size:26px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+  h2::before{content:"";width:6px;height:24px;border-radius:3px;background:linear-gradient(var(--red),var(--blue));}
+  .sub{color:var(--muted);margin-bottom:22px;font-size:14px;}
+
+  .intro{font-size:16px;color:#d7d9ec;}
+  .intro b{color:#fff;}
+
+  /* gameplay cards */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .gcard{border-radius:16px;padding:22px;border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--panel2));position:relative;overflow:hidden;}
+  .gcard.red{border-color:rgba(233,69,96,.45);}
+  .gcard.blue{border-color:rgba(68,136,255,.45);}
+  .gcard .team{font-size:13px;font-weight:700;letter-spacing:1px;}
+  .gcard.red .team{color:var(--red);} .gcard.blue .team{color:var(--blue);}
+  .gcard h3{font-size:22px;margin:4px 0 10px;}
+  .gcard ul{list-style:none;margin-top:8px;}
+  .gcard li{padding:6px 0 6px 22px;position:relative;color:#d7d9ec;font-size:14.5px;}
+  .gcard li::before{content:"▸";position:absolute;left:0;}
+  .gcard.red li::before{color:var(--red);} .gcard.blue li::before{color:var(--blue);}
+  .gcard .heavy{margin-top:12px;font-size:13px;color:var(--gold);background:rgba(255,206,106,.08);border:1px solid rgba(255,206,106,.25);padding:8px 12px;border-radius:10px;}
+
+  /* architecture flow */
+  .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;}
+  .node{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:120px;flex:1 1 140px;}
+  .node .t{font-weight:700;font-size:14px;}
+  .node .d{font-size:12px;color:var(--muted);margin-top:3px;}
+  .node.hub{border-color:rgba(255,206,106,.4);background:linear-gradient(180deg,#1d1d36,#15152a);}
+  .arrow{display:flex;align-items:center;color:var(--muted);font-size:20px;padding:0 2px;}
+
+  /* loop steps */
+  .steps{counter-reset:s;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;position:relative;}
+  .step::before{counter-increment:s;content:counter(s);position:absolute;top:-10px;left:-10px;width:26px;height:26px;border-radius:50%;background:linear-gradient(var(--red),var(--blue));color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .step .t{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .step .d{font-size:12.5px;color:var(--muted);}
+
+  /* resolver table */
+  table{width:100%;border-collapse:collapse;margin-top:6px;background:var(--panel);border-radius:12px;overflow:hidden;border:1px solid var(--line);}
+  th,td{padding:11px 14px;text-align:left;font-size:14px;border-bottom:1px solid var(--line);}
+  th{background:#1c1c38;color:#fff;font-weight:700;}
+  tr:last-child td{border-bottom:none;}
+  td.ok{color:#7CFFB2;} td.bad{color:var(--gold);}
+
+  /* tech grid */
+  .tech{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tech .row{display:flex;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .tech .k{color:var(--blue);font-weight:700;min-width:78px;font-size:13px;}
+
+  /* highlights */
+  .hl{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .hl .item{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .hl .num{font-size:13px;color:var(--gold);font-weight:800;letter-spacing:1px;}
+  .hl h4{font-size:16px;margin:4px 0 6px;}
+  .hl p{font-size:13.5px;color:#cfd2e8;}
+
+  /* code */
+  code{background:#000;color:#9fe6a0;padding:2px 7px;border-radius:6px;font-size:13px;}
+  pre{background:#07070f;border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow:auto;margin-top:8px;}
+  pre code{background:none;color:#cfe3ff;padding:0;}
+
+  .note{margin-top:18px;font-size:13px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:12px 14px;}
+
+  footer{text-align:center;color:var(--muted);font-size:13px;padding-top:30px;}
+  @media(max-width:760px){ .cards,.tech,.hl{grid-template-columns:1fr;} .steps{grid-template-columns:1fr 1fr;} .hero h1{font-size:38px;} }
+</style>
+</head>
+<body>
+
+  <div class="hero wrap">
+    <h1>HOOK <span class="vs">VS</span> FORK</h1>
+    <p class="tag">零依赖、纯原生 JavaScript 的浏览器本地双人对战竞技游戏 —— 红方钩锁拉拽眩晕，蓝方钢叉击退钉墙，把对手推入深渊即获胜。</p>
+    <div class="badges">
+      <span class="badge red">🔴 RED · Hook 钩锁</span>
+      <span class="badge blue">🔵 BLUE · Fork 钢叉</span>
+      <span class="badge">⚔️ 本地双人</span>
+      <span class="badge">🎮 开箱即玩</span>
+      <span class="badge">📦 零构建</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <section>
+      <h2>项目简介</h2>
+      <p class="sub">用最朴素的技术，把一套完整战斗闭环讲清楚。</p>
+      <p class="intro">做一款<b>随手可玩、无需安装与构建</b>的 2D 竞技原型并不难，难的是用极少的代码把"输入 → 武器状态机 → 命中检测 → 同帧仲裁 → 物理结算 → 胜负判定"的链路讲透。本项目用 ES5 风格 JS + Canvas 做到了，核心设计是<b>两方武器机制不对称</b>：红方负责"拉"，蓝方负责"推"，再叠加一套"重克轻、重撞重双弹"的仲裁规则，制造出可观的策略深度。它是学习<b>战斗系统架构</b>的极佳样本。</p>
+    </section>
+
+    <section>
+      <h2>核心玩法</h2>
+      <p class="sub">红蓝两方武器机制相反，却在同一套物理与仲裁框架下对抗。</p>
+      <div class="cards">
+        <div class="gcard red">
+          <div class="team">RED · HOOK</div>
+          <h3>钩锁（拉拽型）</h3>
+          <ul>
+            <li>发射钩索，命中后沿出钩<b>反方向</b>把目标拉向自己</li>
+            <li>命中即造成短<b>僵直</b>，打断对方节奏</li>
+            <li>轻勾随手即发；重勾需<b>蓄力</b></li>
+            <li>钩尖碰到墙/障碍会自动收回</li>
+          </ul>
+          <div class="heavy">★ 重勾：拉力与眩晕更强，蓄力期间有闪光提示</div>
+        </div>
+        <div class="gcard blue">
+          <div class="team">BLUE · FORK</div>
+          <h3>钢叉（击退型）</h3>
+          <ul>
+            <li>瞬间突刺，命中后沿出叉方向把目标<b>击退</b></li>
+            <li>命中造成僵直，配合场地把人推下深渊</li>
+            <li>轻叉随手即发；重叉需<b>蓄力</b></li>
+            <li>命中检测用"线段 vs 圆"算法，贴合长兵器</li>
+          </ul>
+          <div class="heavy">★ 重叉：击退力更大，目标撞墙/障碍则<b>钉墙 1 秒</b></div>
+        </div>
+      </div>
+      <div class="note">🎯 胜利条件：歼灭敌方全员，或 180 秒时限内存活人数多者胜；人数相同判平局。踏入<strong style="color:var(--red)">深渊格</strong>（纯黑危险区）即死。</div>
+    </section>
+
+    <section>
+      <h2>系统架构</h2>
+      <p class="sub">8 个脚本按依赖顺序在 index.html 中加载，game.js 作为总调度。</p>
+      <div class="flow">
+        <div class="node"><div class="t">index.html</div><div class="d">Canvas 1280×720</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="t">config.js</div><div class="d">CONFIG 全局数值</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="t">input.js</div><div class="d">两套输入方案</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="t">physics.js</div><div class="d">碰撞/力/死区</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="t">level.js</div><div class="d">网格场地·障碍·深渊</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="t">weapons.js</div><div class="d">Hook / Fork 状态机</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="t">resolver.js</div><div class="d">同帧命中仲裁</div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="t">player.js</div><div class="d">状态机/绘制/序列化</div></div>
+        <div class="arrow">→</div>
+        <div class="node hub"><div class="t">game.js</div><div class="d">主循环·状态机·UI</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>每帧结算序列</h2>
+      <p class="sub">外层是 lobby → instructions → countdown → playing → gameover 状态机；playing 每帧按固定顺序推进。</p>
+      <div class="steps">
+        <div class="step"><div class="t">清空仲裁队列</div><div class="d">每帧重置命中缓存</div></div>
+        <div class="step"><div class="t">武器 update</div><div class="d">钩/叉推进状态机</div></div>
+        <div class="step"><div class="t">命中仲裁</div><div class="d">resolver 统一裁决</div></div>
+        <div class="step"><div class="t">施加效果</div><div class="d">pull / push / stun</div></div>
+        <div class="step"><div class="t">输入与移动</div><div class="d">P1 键鼠 / P2 键盘</div></div>
+        <div class="step"><div class="t">玩家间碰撞</div><div class="d">圆-圆分离</div></div>
+        <div class="step"><div class="t">墙/障碍</div><div class="d">圆-AABB 推出</div></div>
+        <div class="step"><div class="t">钉墙/死区</div><div class="d">出界即死</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>命中仲裁规则</h2>
+      <p class="sub">武器只"上报"命中，由 HitResolver 统一裁决同帧冲突——不依赖代码执行顺序，结果确定。</p>
+      <table>
+        <thead><tr><th>情形</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>同阵营命中</td><td class="ok">始终生效（不受仲裁影响）</td></tr>
+          <tr><td>轻 vs 轻</td><td>双方均生效</td></tr>
+          <tr><td>重 vs 轻</td><td class="ok">重生效，轻被弹开</td></tr>
+          <tr><td>重 vs 重</td><td class="bad">双方弹开，攻击者各僵直 1 秒</td></tr>
+          <tr><td>多人重攻击命中同一目标</td><td class="bad">全部弹开，目标也僵直 1 秒</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>技术栈</h2>
+      <p class="sub">纯前端，无打包、无依赖。</p>
+      <div class="tech">
+        <div class="row"><span class="k">语言</span><span>JavaScript（ES5 风格 var / 函数式类）</span></div>
+        <div class="row"><span class="k">渲染</span><span>HTML5 Canvas 2D</span></div>
+        <div class="row"><span class="k">主循环</span><span>requestAnimationFrame（固定 dt 上限）</span></div>
+        <div class="row"><span class="k">输入</span><span>DOM 事件 keydown / mouse</span></div>
+        <div class="row"><span class="k">配置</span><span>纯 JS 对象 CONFIG</span></div>
+        <div class="row"><span class="k">依赖</span><span>无</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>设计亮点</h2>
+      <p class="sub">六个值得借鉴的工程取舍。</p>
+      <div class="hl">
+        <div class="item"><div class="num">01</div><h4>数据驱动调参</h4><p>所有平衡数值集中在 config.js，改数值即改手感，逻辑零改动。</p></div>
+        <div class="item"><div class="num">02</div><h4>命中仲裁解耦</h4><p>武器只"上报"不"结算"，由 Resolver 统一裁决，逻辑清晰且利于联机化。</p></div>
+        <div class="item"><div class="num">03</div><h4>网格化场地</h4><p>障碍/深渊用 "c,r" 集合存储，查询 O(1)；随机生成带间距与出生点保护。</p></div>
+        <div class="item"><div class="num">04</div><h4>武器状态机</h4><p>Hook/Fork 生命周期完备（蓄力→伸出→收回→冷却），细节特效齐全。</p></div>
+        <div class="item"><div class="num">05</div><h4>网络同步预留</h4><p>Player/Weapon/Level 均实现 serialize/fromData，已留好联机接口。</p></div>
+        <div class="item"><div class="num">06</div><h4>零依赖零构建</h4><p>纯前端双击即玩，是教学与原型验证的低成本样本。</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>快速开始</h2>
+      <p class="sub">三种启动方式，无需 npm install。</p>
+      <p>① 直接用浏览器打开 <code>index.html</code>；② 推荐本地起静态服务器避免文件限制：</p>
+      <pre><code>cd HOOK_AND_FORK
+python -m http.server 8000
+# 浏览器访问 http://localhost:8000</code></pre>
+      <p style="margin-top:10px">③ 大厅按 <code>空格</code> → 看说明再按 <code>空格</code> → 倒计时开战。</p>
+      <p style="margin-top:10px;color:var(--muted);font-size:13px">红方 WASD + 鼠标（左键轻勾 / 右键重勾）；蓝方 方向键 + <code>,</code> 轻叉 / <code>.</code> 重叉。</p>
+    </section>
+
+    <div class="note">
+      📌 <strong>说明</strong>：本项目为本地双人（P1 键鼠 + P2 键盘）。<code>serialize()/fromData()</code> 已就位，下一步可用 WebSocket 把每帧状态广播给远端，并以本地 <code>HitResolver</code> 作为服务端权威裁决，升级为联机对战。仓库未包含 LICENSE 文件，二次开发请先联系作者 <code>orz7380531</code> 授权。
+    </div>
+
+    <footer>HOOK AND FORK · 项目分析 · 由 github-readme-writer 技能生成 · 配色沿用游戏自身深空主题</footer>
+  </div>
+</body>
+</html>
