@@ -1,4 +1,16 @@
-# HOOK AND FORK
+<div align="center">
+
+<img src="./assets/banner.svg" alt="HOOK AND FORK" width="100%" />
+
+<br/>
+
+<img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES5-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
+<img alt="HTML5 Canvas" src="https://img.shields.io/badge/HTML5-Canvas-E34F26?style=for-the-badge&logo=html5&logoColor=white" />
+<img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen?style=for-the-badge" />
+<img alt="Platform" src="https://img.shields.io/badge/platform-browser-blueviolet?style=for-the-badge" />
+<img alt="License" src="https://img.shields.io/badge/license-unspecified-red?style=for-the-badge" />
+
+</div>
 
 > 零依赖、纯原生 JavaScript 实现的浏览器本地双人对战竞技小游戏 —— 红方「钩锁」拉拽眩晕，蓝方「钢叉」击退钉墙，把对手推入深渊即获胜。
 
